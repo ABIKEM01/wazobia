@@ -1,113 +1,151 @@
-import Image from "next/image";
+"use client";
+import React, { useState, useEffect } from "react";
+// import { PlusCircleIcon } from '@heroicons/react/solid';
+import FileUpload from "./inputs/FileUpload";
+import TextEditor from "./inputs/textAreaInput";
+import TitleEditor from "./inputs/TitleEditor";
+import InputField from "./inputs/InputField";
+import * as Yup from "yup";
+import { Formik, ErrorMessage } from "formik";
+import Head from "next/head";
+import axios from 'axios'
 
-export default function Home() {
+const Home = () => {
+  const [images, setImages] = useState<any>([]);
+  const [videos, setVideos] = useState<any>([]);
+  const [description, setDescription] = useState<any>("");
+  const [title, setTitle] = useState<any>("");
+
+
+  const uploadFile = async (file: any) => {
+    const formData = new FormData()
+    const cloud_name = 'dpkc6mzti'
+    const upload_preset = 'cityshoppa'
+    // console.log(process.env.CLOUDINARY_UPLOAD_PRESET, "THE UPLOAD PRESET ")
+    formData.append("file", file)
+    formData.append("upload_preset", `${upload_preset}`)
+    formData.append("cloud_name", `${cloud_name}`)
+    const imageResult = await axios.post("https://api.cloudinary.com/v1_1/dpkc6mzti/image/upload", formData)
+    return imageResult.data.secure_url
+}
+
   return (
-    <main className="flex min-h-screen flex-col items-center justify-between p-24">
-      <div className="z-10 w-full max-w-5xl items-center justify-between font-mono text-sm lg:flex">
-        <p className="fixed left-0 top-0 flex w-full justify-center border-b border-gray-300 bg-gradient-to-b from-zinc-200 pb-6 pt-8 backdrop-blur-2xl dark:border-neutral-800 dark:bg-zinc-800/30 dark:from-inherit lg:static lg:w-auto  lg:rounded-xl lg:border lg:bg-gray-200 lg:p-4 lg:dark:bg-zinc-800/30">
-          Get started by editing&nbsp;
-          <code className="font-mono font-bold">app/page.tsx</code>
-        </p>
-        <div className="fixed bottom-0 left-0 flex h-48 w-full items-end justify-center bg-gradient-to-t from-white via-white dark:from-black dark:via-black lg:static lg:size-auto lg:bg-none">
-          <a
-            className="pointer-events-none flex place-items-center gap-2 p-8 lg:pointer-events-auto lg:p-0"
-            href="https://vercel.com?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            By{" "}
-            <Image
-              src="/vercel.svg"
-              alt="Vercel Logo"
-              className="dark:invert"
-              width={100}
-              height={24}
-              priority
-            />
-          </a>
+    <>
+      <Head>
+        <title>Text Editor - Wazobia</title>
+        <meta name="description" content="City Shoppa" />
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <link rel="icon" href="/favicon.ico" />
+      </Head>
+      <div className="w-full">
+        <div className="flex flex-col md:flex-row md:justify-center md:items-center mb-4">
+          <div className="bg-white rounded-lg shadow-lg p-6">
+            <h2 className="text-2xl font-semibold mb-1">Add Post</h2>
+
+            <Formik
+              initialValues={{
+                title: title,
+                description: description,
+                image: [],
+              }}
+              validationSchema={Yup.object({
+                title: Yup.string().required(
+                  "Product or Service name is required"
+                ),
+                email: Yup.string().required("Email is required"),
+                phone: Yup.string().required("Phone number is requred"),
+              })}
+              onSubmit={async (values, { setSubmitting }) => {
+                setSubmitting(true);
+
+                let postImage;
+                if (images.length > 0) {
+                  const result = await uploadFile(images[0].data_url)
+                  postImage = result
+                }
+
+                const requestDetails = {
+                  ...values,
+                  description: description,
+                  // image: postImage,
+                };
+
+                try {
+                  // const res = await postRequest(requestDetails)
+                  // if (res.post) {
+                  //   showSuccess("Request Created Successfully.")
+                  //   router.push("/")
+                  // setSubmitting(false)
+                  // }
+                } catch (err) {
+                  // showError("Something Went Wrong. Please Try Again")
+                  setSubmitting(false);
+                }
+              }}
+            >
+              {({
+                values,
+                handleChange,
+                handleBlur,
+                handleSubmit,
+                isSubmitting,
+              }) => (
+                <form onSubmit={handleSubmit}>
+              
+                  <div className="mb-1 mt-1">
+                    <label
+                      htmlFor="description"
+                      className="block text-sm font-medium text-left text-gray-700 py-3"
+                    >
+                      {/* Description */}
+                    </label>
+                    <TextEditor text={description} setText={setDescription} />
+                  </div>
+
+                  <div className="mb-1 mt-12">
+                    <label
+                      htmlFor="image"
+                      className="block text-sm font-medium text-left text-gray-700 md:pt-0 pt-16 md:py-3"
+                    >
+                    </label>
+
+                    <FileUpload
+                      setImages={setImages}
+                      images={images}
+                      multiple={true}
+                      label={"Upload Image"}
+                    />
+                  </div>
+                  <div className="flex justify-start">
+                    <button
+                      // onClick={submitHandler}
+                      // disabled={false}
+                      disabled={isSubmitting}
+                      type="submit"
+                      className="flex my-10 cursor-pointer items-center justify-center bg-green-600 hover:bg-primary text-white font-semibold py-2 px-4 rounded-lg transition duration-200"
+                    >
+                      {/* <PlusCircleIcon className="h-5 w-5 mr-2" /> */}
+                      {isSubmitting ? "Please Wait..." : "Embeded"}
+                    </button>
+                    <button
+                      // onClick={submitHandler}
+                      // disabled={false}
+                      disabled={isSubmitting}
+                      type="submit"
+                      className="ml-4 flex my-10 cursor-pointer items-center justify-center bg-gray-100 hover:bg-primary text-black font-semibold py-2 px-4 border border-black rounded-lg transition duration-200"
+                    >
+                      {/* <PlusCircleIcon className="h-5 w-5 mr-2" /> */}
+                      {isSubmitting ? "Please Wait..." : "Cancel"}
+                    </button>
+                  </div>
+                </form>
+              )}
+            </Formik>
+          </div>
         </div>
       </div>
-
-      <div className="relative z-[-1] flex place-items-center before:absolute before:h-[300px] before:w-full before:-translate-x-1/2 before:rounded-full before:bg-gradient-radial before:from-white before:to-transparent before:blur-2xl before:content-[''] after:absolute after:-z-20 after:h-[180px] after:w-full after:translate-x-1/3 after:bg-gradient-conic after:from-sky-200 after:via-blue-200 after:blur-2xl after:content-[''] before:dark:bg-gradient-to-br before:dark:from-transparent before:dark:to-blue-700 before:dark:opacity-10 after:dark:from-sky-900 after:dark:via-[#0141ff] after:dark:opacity-40 sm:before:w-[480px] sm:after:w-[240px] before:lg:h-[360px]">
-        <Image
-          className="relative dark:drop-shadow-[0_0_0.3rem_#ffffff70] dark:invert"
-          src="/next.svg"
-          alt="Next.js Logo"
-          width={180}
-          height={37}
-          priority
-        />
-      </div>
-
-      <div className="mb-32 grid text-center lg:mb-0 lg:w-full lg:max-w-5xl lg:grid-cols-4 lg:text-left">
-        <a
-          href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-          className="group rounded-lg border border-transparent px-5 py-4 transition-colors hover:border-gray-300 hover:bg-gray-100 hover:dark:border-neutral-700 hover:dark:bg-neutral-800/30"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <h2 className="mb-3 text-2xl font-semibold">
-            Docs{" "}
-            <span className="inline-block transition-transform group-hover:translate-x-1 motion-reduce:transform-none">
-              -&gt;
-            </span>
-          </h2>
-          <p className="m-0 max-w-[30ch] text-sm opacity-50">
-            Find in-depth information about Next.js features and API.
-          </p>
-        </a>
-
-        <a
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          className="group rounded-lg border border-transparent px-5 py-4 transition-colors hover:border-gray-300 hover:bg-gray-100 hover:dark:border-neutral-700 hover:dark:bg-neutral-800/30"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <h2 className="mb-3 text-2xl font-semibold">
-            Learn{" "}
-            <span className="inline-block transition-transform group-hover:translate-x-1 motion-reduce:transform-none">
-              -&gt;
-            </span>
-          </h2>
-          <p className="m-0 max-w-[30ch] text-sm opacity-50">
-            Learn about Next.js in an interactive course with&nbsp;quizzes!
-          </p>
-        </a>
-
-        <a
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-          className="group rounded-lg border border-transparent px-5 py-4 transition-colors hover:border-gray-300 hover:bg-gray-100 hover:dark:border-neutral-700 hover:dark:bg-neutral-800/30"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <h2 className="mb-3 text-2xl font-semibold">
-            Templates{" "}
-            <span className="inline-block transition-transform group-hover:translate-x-1 motion-reduce:transform-none">
-              -&gt;
-            </span>
-          </h2>
-          <p className="m-0 max-w-[30ch] text-sm opacity-50">
-            Explore starter templates for Next.js.
-          </p>
-        </a>
-
-        <a
-          href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-          className="group rounded-lg border border-transparent px-5 py-4 transition-colors hover:border-gray-300 hover:bg-gray-100 hover:dark:border-neutral-700 hover:dark:bg-neutral-800/30"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <h2 className="mb-3 text-2xl font-semibold">
-            Deploy{" "}
-            <span className="inline-block transition-transform group-hover:translate-x-1 motion-reduce:transform-none">
-              -&gt;
-            </span>
-          </h2>
-          <p className="m-0 max-w-[30ch] text-balance text-sm opacity-50">
-            Instantly deploy your Next.js site to a shareable URL with Vercel.
-          </p>
-        </a>
-      </div>
-    </main>
+    </>
   );
-}
+};
+
+export default Home;
